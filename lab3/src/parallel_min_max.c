@@ -14,13 +14,17 @@
 
 #include "find_min_max.h"
 #include "utils.h"
-
+#include <signal.h>
+void al()
+{
+    kill(0,SIGKILL);
+}
 int main(int argc, char **argv) {
   int seed = -1;
   int array_size = -1;
   int pnum = -1;
   bool with_files = false;
-
+int timeout =0;
   while (true) {
     int current_optind = optind ? optind : 1;
 
@@ -28,6 +32,7 @@ int main(int argc, char **argv) {
                                       {"array_size", required_argument, 0, 0},
                                       {"pnum", required_argument, 0, 0},
                                       {"by_files", no_argument, 0, 'f'},
+                                      {"timeout", required_argument, 0,0},
                                       {0, 0, 0, 0}};
 
     int option_index = 0;
@@ -40,23 +45,27 @@ int main(int argc, char **argv) {
         switch (option_index) {
           case 0:
             seed = atoi(optarg);
-            // your code here
-            // error handling
+            if(seed<=0)
+                exit(0);
             break;
           case 1:
             array_size = atoi(optarg);
-            // your code here
-            // error handling
+            if(array_size<=0)
+                exit(0);
             break;
           case 2:
             pnum = atoi(optarg);
-            // your code here
-            // error handling
+            if(pnum<=0)
+                exit(0);
             break;
           case 3:
             with_files = true;
             break;
-
+        case 4: 
+        timeout=atoi(optarg);
+            if(timeout<=0)
+                exit(0);
+            break;
           defalut:
             printf("Index %d is out of options\n", option_index);
         }
@@ -72,7 +81,7 @@ int main(int argc, char **argv) {
         printf("getopt returned character code 0%o?\n", c);
     }
   }
-
+ 
   if (optind < argc) {
     printf("Has at least one no option argument\n");
     return 1;
@@ -83,28 +92,49 @@ int main(int argc, char **argv) {
            argv[0]);
     return 1;
   }
-
+    
   int *array = malloc(sizeof(int) * array_size);
+  printf("params: %d %d %d\n", seed, array_size, pnum);
   GenerateArray(array, array_size, seed);
   int active_child_processes = 0;
 
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
+  int i;
+  int file_pipe[2];
+  if (pipe(file_pipe)<0)
+  {
+      exit(0);
+  }
 
-  for (int i = 0; i < pnum; i++) {
+    float cut = (float)array_size / pnum;
+  for (i = 0; i < pnum; i++) {
     pid_t child_pid = fork();
     if (child_pid >= 0) {
-      // successful fork
       active_child_processes += 1;
       if (child_pid == 0) {
-        // child process
-
-        // parallel somehow
+          sleep (10);
+        printf("Succesfull fork: %d %d\n ", i, getpid());
+        int arr_start = cut * (float)i;
+        int arr_end = arr_start + cut;
+        
+        struct MinMax min_max1 = GetMinMax(array, arr_start, arr_end);
 
         if (with_files) {
-          // use files here
+             FILE *fi;
+            fi=fopen("mm.txt", "w");
+            char b[256];
+            sprintf(b, "%d", min_max1.min);
+            fprintf(fi, b);
+            fprintf(fi, (const char*)"\n");
+            sprintf(b, "%d", min_max1.max);
+            fprintf(fi, b);
+            fprintf(fi, (const char*)"\n");
+            fclose(fi);
+          
         } else {
-          // use pipe here
+            write(file_pipe[1], &min_max1.min, sizeof(int));
+            write(file_pipe[1], &min_max1.max, sizeof(int));
         }
         return 0;
       }
@@ -114,25 +144,37 @@ int main(int argc, char **argv) {
       return 1;
     }
   }
-
+    if(timeout>0)
+{
+    signal (14,al);
+    alarm(timeout);
+    printf("Timeout is on %d \n", timeout);
+}
   while (active_child_processes > 0) {
-    // your code here
-
+      wait(0);
     active_child_processes -= 1;
+
   }
 
   struct MinMax min_max;
   min_max.min = INT_MAX;
   min_max.max = INT_MIN;
 
-  for (int i = 0; i < pnum; i++) {
+  for (i = 0; i < pnum; i++) {
     int min = INT_MAX;
     int max = INT_MIN;
 
     if (with_files) {
-      // read from files
+        FILE *fp;
+        fp=fopen("mm.txt", "r");
+        char buf[256];
+        fscanf(fp,"%s",buf);
+        min = atoi(buf);
+        fscanf(fp,"%s",buf);
+        max = atoi(buf);
     } else {
-      // read from pipes
+        read(file_pipe[0], &min, sizeof(int));
+        read(file_pipe[0], &max, sizeof(int));
     }
 
     if (min < min_max.min) min_max.min = min;

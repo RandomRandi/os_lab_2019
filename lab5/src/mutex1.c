@@ -1,3 +1,4 @@
+
 /********************************************************
  * An example source module to accompany...
  *
@@ -15,7 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// gcc mutex.c -lpthread -o mutex.out && ./mutex.out
+// gcc mutex1.c -lpthread -o mutex1.out && ./mutex1.out  
 
 void do_one_thing(int *);
 void do_another_thing(int *);
@@ -59,7 +60,7 @@ void do_one_thing(int *pnum_times) {
   unsigned long k;
   int work;
   for (i = 0; i < 50; i++) {
-    // pthread_mutex_lock(&mut);
+     pthread_mutex_lock(&mut);
     printf("doing one thing\n");
     work = *pnum_times;
     printf("counter = %d\n", work);
@@ -67,7 +68,7 @@ void do_one_thing(int *pnum_times) {
     for (k = 0; k < 500000; k++)
       ;                 /* long cycle */
     *pnum_times = work; /* write back */
-	// pthread_mutex_unlock(&mut);
+	 pthread_mutex_unlock(&mut);
   }
 }
 
@@ -76,7 +77,7 @@ void do_another_thing(int *pnum_times) {
   unsigned long k;
   int work;
   for (i = 0; i < 50; i++) {
-    // pthread_mutex_lock(&mut);
+     pthread_mutex_lock(&mut);
     printf("doing another thing\n");
     work = *pnum_times;
     printf("counter = %d\n", work);
@@ -84,7 +85,7 @@ void do_another_thing(int *pnum_times) {
     for (k = 0; k < 500000; k++)
       ;                 /* long cycle */
     *pnum_times = work; /* write back */
-    // pthread_mutex_unlock(&mut);
+     pthread_mutex_unlock(&mut);
   }
 }
 
@@ -92,3 +93,4 @@ void do_wrap_up(int counter) {
   int total;
   printf("All done, counter = %d\n", counter);
 }
+

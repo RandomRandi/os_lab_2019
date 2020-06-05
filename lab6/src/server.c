@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include "MultModulo.h"
 
+//./server.out --port 255486 --tnum 2
 struct FactorialArgs {
   uint64_t begin;
   uint64_t end;

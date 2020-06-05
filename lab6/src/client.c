@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <math.h>
 #include "MultModulo.h"
-
+//./client.out --k 5 --mod 123 --servers servers.txt
 struct Server {
   char ip[255];
   int port;
